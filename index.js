@@ -8,7 +8,8 @@ if (!token) {
   process.exit(1);
 }
 
-const raidChannelId = "1459967642621448316";
+// ✅ UPDATED RAID CHANNEL ID
+const raidChannelId = "1465310648450941073";
 
 // ================= CLIENT =================
 const client = new Client({
@@ -34,7 +35,6 @@ const dungeonSchedule = {
   "07:00": "Igris",
   "07:30": "Demon Castle",
 
-  // 🔥 8:00 AM SKIP (Elves skipped → Goblin)
   "08:00": "Goblin",
   "08:30": "Subway",
   "09:00": "Infernal",
@@ -70,25 +70,29 @@ const dungeonSchedule = {
   "23:30": "Insect",
 };
 
-// ================= IMAGES =================
-const dungeonImages = {
-  Goblin:
-    "https://cdn.discordapp.com/attachments/1460638599082021107/1460695534078529679/image.png",
-  Subway:
-    "https://cdn.discordapp.com/attachments/1460638599082021107/1460696594457563291/image.png",
-  Infernal:
-    "https://cdn.discordapp.com/attachments/1460638599082021107/1460697434920587489/image.png",
-  Insect:
-    "https://cdn.discordapp.com/attachments/1460638599082021107/1460696683498176737/image.png",
-  Igris:
-    "https://cdn.discordapp.com/attachments/1460638599082021107/1460696861399842979/image.png",
-  Elves:
-    "https://cdn.discordapp.com/attachments/1460638599082021107/1460695678941663377/image.png",
-  "Demon Castle":
-    "https://cdn.discordapp.com/attachments/1410965755742130247/1463577590039183431/image.png",
+// ================= DUNGEON CHANNEL IDS (ONLY CHANGE) =================
+const dungeonChannels = {
+  Insect: "1465426148488908942",
+  "Demon Castle": "1465426100019793961",
+  Igris: "1465426048609947932",
+  Goblin: "1465426012421492857",
+  Elves: "1465425963905974483",
+  Subway: "1465425957165732003",
+  Infernal: "1465425897988554888",
 };
 
-// ================= ROLE IDS =================
+// ================= IMAGES =================
+const dungeonImages = {
+  Goblin: "https://cdn.discordapp.com/attachments/1460638599082021107/1460695534078529679/image.png",
+  Subway: "https://cdn.discordapp.com/attachments/1460638599082021107/1460696594457563291/image.png",
+  Infernal: "https://cdn.discordapp.com/attachments/1460638599082021107/1460697434920587489/image.png",
+  Insect: "https://cdn.discordapp.com/attachments/1460638599082021107/1460696683498176737/image.png",
+  Igris: "https://cdn.discordapp.com/attachments/1460638599082021107/1460696861399842979/image.png",
+  Elves: "https://cdn.discordapp.com/attachments/1460638599082021107/1460695678941663377/image.png",
+  "Demon Castle": "https://cdn.discordapp.com/attachments/1410965755742130247/1463577590039183431/image.png",
+};
+
+// ================= ROLE IDS (UNCHANGED) =================
 const raidRoles = {
   Goblin: "1460130693895159982",
   Subway: "1460130735175499862",
@@ -201,7 +205,6 @@ async function mainLoop() {
   const channel = await client.channels.fetch(raidChannelId).catch(() => null);
   if (!channel) return;
 
-  // ===== ACTIVE (:00 / :30) =====
   if (s === 0 && (m === 0 || m === 30)) {
     if (lastActiveSlot === slot) return;
     lastActiveSlot = slot;
@@ -237,7 +240,6 @@ async function mainLoop() {
     pingSent = false;
   }
 
-  // ===== REMINDER (:20 / :50) =====
   if (s === 0 && (m === 20 || m === 50)) {
     if (lastReminderSlot === slot) return;
     lastReminderSlot = slot;
