@@ -96,7 +96,7 @@ let pingSent = false;
 let lastActiveKey = null;
 let lastReminderKey = null;
 
-// ================= PH TIME (STABLE) =================
+// ================= PH TIME =================
 function getPHTime() {
   return new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
@@ -166,32 +166,31 @@ async function postReminder(channel, dungeon, secondsLeft) {
       pingSent = true;
       await channel.send(`<@&${raidRoles[dungeon]}>`);
     }
+
     await update();
   }, 1000);
 }
 
-// ================= MAIN LOOP (NEVER STOPS) =================
+// ================= MAIN LOOP =================
 async function mainLoop() {
   const ph = getPHTime();
-  const h = ph.getHours();
   const m = ph.getMinutes();
   const s = ph.getSeconds();
+
+  const key = formatHM(ph);
 
   const channel = await client.channels.fetch(raidChannelId).catch(() => null);
   if (!channel) return;
 
-  const key = `${h}:${m}`;
-
-  // ===== ACTIVE =====
-  if (s === 0 && (m === 0 || m === 30)) {
+  // ===== ACTIVE DUNGEON =====
+  if ((m === 0 || m === 30) && s <= 1) {
     if (lastActiveKey === key) return;
     lastActiveKey = key;
 
-    const timeKey = formatHM(ph);
-    const active = dungeonSchedule[timeKey];
+    const active = dungeonSchedule[key];
     if (!active) return;
 
-    const next = dungeonSchedule[getNextSlot(timeKey)];
+    const next = dungeonSchedule[getNextSlot(key)];
 
     await channel.send({
       embeds: [
@@ -218,7 +217,7 @@ async function mainLoop() {
   }
 
   // ===== REMINDER =====
-  if (s === 0 && (m === 20 || m === 50)) {
+  if ((m === 20 || m === 50) && s <= 1) {
     if (lastReminderKey === key) return;
     lastReminderKey = key;
 
@@ -228,7 +227,7 @@ async function mainLoop() {
     const upcoming = dungeonSchedule[formatHM(base)];
     if (!upcoming) return;
 
-    await postReminder(channel, upcoming, (base - ph) / 1000);
+    await postReminder(channel, upcoming, Math.floor((base - ph) / 1000));
   }
 }
 
