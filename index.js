@@ -4,7 +4,7 @@ const express = require("express");
 // ================= CONFIG =================
 const token = process.env.TOKEN;
 if (!token) {
-  console.error("❌ TOKEN env variable not found!");
+  console.error("TOKEN env variable not found!");
   process.exit(1);
 }
 
@@ -118,7 +118,7 @@ function getNextSlot(time) {
 
 // ================= READY =================
 client.once("ready", () => {
-  console.log(`🟢 ONLINE AS ${client.user.tag}`);
+  console.log(`Logged in as ${client.user.tag}`);
   setInterval(mainLoop, 1000);
 });
 
@@ -176,11 +176,13 @@ async function mainLoop() {
   const ph = getPHTime();
   const m = ph.getMinutes();
   const s = ph.getSeconds();
+
   const key = formatHM(ph);
 
   const channel = await client.channels.fetch(raidChannelId).catch(() => null);
   if (!channel) return;
 
+  // ===== ACTIVE DUNGEON =====
   if ((m === 0 || m === 30) && s <= 1) {
     if (lastActiveKey === key) return;
     lastActiveKey = key;
@@ -214,6 +216,7 @@ async function mainLoop() {
     reminderMessage = null;
   }
 
+  // ===== REMINDER =====
   if ((m === 20 || m === 50) && s <= 1) {
     if (lastReminderKey === key) return;
     lastReminderKey = key;
@@ -228,16 +231,10 @@ async function mainLoop() {
   }
 }
 
-// ================= EXPRESS (KEEP ALIVE) =================
+// ================= EXPRESS =================
 const app = express();
 app.get("/", (_, res) => res.send("Bot is running"));
-app.listen(process.env.PORT || 10000, () =>
-  console.log("🌐 Web server active")
-);
-
-// ================= ERROR HANDLERS =================
-process.on("unhandledRejection", err => console.error("UNHANDLED:", err));
-process.on("uncaughtException", err => console.error("CRASH:", err));
+app.listen(process.env.PORT || 3000);
 
 // ================= LOGIN =================
 client.login(token);
