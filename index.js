@@ -228,14 +228,14 @@ async function mainLoop() {
   }
 }
 
-// ================= EXPRESS (RENDER KEEP ALIVE) =================
+// ================= EXPRESS (KEEP ALIVE) =================
 const app = express();
 app.get("/", (_, res) => res.send("Bot is running"));
 app.listen(process.env.PORT || 10000, () =>
   console.log("🌐 Web server active")
 );
 
-// ================= SAFETY NET =================
+// ================= ERROR HANDLERS =================
 process.on("unhandledRejection", err => console.error("UNHANDLED:", err));
 process.on("uncaughtException", err => console.error("CRASH:", err));
 
