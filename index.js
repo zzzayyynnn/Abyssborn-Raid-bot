@@ -9,7 +9,7 @@ if (!token) {
 }
 
 // ================= RAID CHANNEL =================
-const raidChannelId = "1465310648450941073";
+const raidChannelId = "1465310648450941073"; // ✅ UPDATED
 
 // ================= CLIENT =================
 const client = new Client({
@@ -70,16 +70,23 @@ const dungeonSchedule = {
 
 // ================= IMAGES =================
 const dungeonImages = {
-  Goblin: "https://cdn.discordapp.com/attachments/1460638599082021107/1460695534078529679/image.png",
-  Subway: "https://cdn.discordapp.com/attachments/1460638599082021107/1460696594457563291/image.png",
-  Infernal: "https://cdn.discordapp.com/attachments/1460638599082021107/1460697434920587489/image.png",
-  Insect: "https://cdn.discordapp.com/attachments/1460638599082021107/1460696683498176737/image.png",
-  Igris: "https://cdn.discordapp.com/attachments/1460638599082021107/1460696861399842979/image.png",
-  Elves: "https://cdn.discordapp.com/attachments/1460638599082021107/1460695678941663377/image.png",
-  "Demon Castle": "https://cdn.discordapp.com/attachments/1410965755742130247/1463577590039183431/image.png",
+  Goblin:
+    "https://cdn.discordapp.com/attachments/1460638599082021107/1460695534078529679/image.png",
+  Subway:
+    "https://cdn.discordapp.com/attachments/1460638599082021107/1460696594457563291/image.png",
+  Infernal:
+    "https://cdn.discordapp.com/attachments/1460638599082021107/1460697434920587489/image.png",
+  Insect:
+    "https://cdn.discordapp.com/attachments/1460638599082021107/1460696683498176737/image.png",
+  Igris:
+    "https://cdn.discordapp.com/attachments/1460638599082021107/1460696861399842979/image.png",
+  Elves:
+    "https://cdn.discordapp.com/attachments/1460638599082021107/1460695678941663377/image.png",
+  "Demon Castle":
+    "https://cdn.discordapp.com/attachments/1410965755742130247/1463577590039183431/image.png",
 };
 
-// ================= ROLE IDS =================
+// ================= ROLE IDS (FOR PING — UPDATED) =================
 const raidRoles = {
   Insect: "1465426148488908942",
   "Demon Castle": "1465426100019793961",
@@ -93,13 +100,19 @@ const raidRoles = {
 // ================= STATE =================
 let reminderMessage = null;
 let pingSent = false;
-let lastActiveKey = null;
-let lastReminderKey = null;
+let lastActiveSlot = null;
+let lastReminderSlot = null;
 
-// ================= PH TIME =================
+// ================= TIME HELPERS =================
 function getPHTime() {
+  const now = new Date();
   return new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    now.getUTCHours() + 8,
+    now.getUTCMinutes(),
+    now.getUTCSeconds()
   );
 }
 
@@ -111,7 +124,7 @@ function formatHM(date) {
 
 function getNextSlot(time) {
   const [h, m] = time.split(":").map(Number);
-  const d = getPHTime();
+  const d = new Date();
   d.setHours(h, m + 30, 0, 0);
   return formatHM(d);
 }
@@ -131,7 +144,7 @@ async function postReminder(channel, dungeon, secondsLeft) {
       Math.floor(s % 60)
     ).padStart(2, "0")}`;
 
-  const update = async () => {
+  const updateEmbed = async () => {
     const red = secondsLeft <= 180;
 
     const embed = new EmbedBuilder()
@@ -151,23 +164,28 @@ async function postReminder(channel, dungeon, secondsLeft) {
       .setImage(dungeonImages[dungeon])
       .setTimestamp();
 
-    if (!reminderMessage)
+    if (!reminderMessage) {
       reminderMessage = await channel.send({ embeds: [embed] });
-    else await reminderMessage.edit({ embeds: [embed] });
+    } else {
+      await reminderMessage.edit({ embeds: [embed] });
+    }
   };
 
-  await update();
+  await updateEmbed();
 
   const timer = setInterval(async () => {
     secondsLeft--;
-    if (secondsLeft <= 0) return clearInterval(timer);
+    if (secondsLeft <= 0) {
+      clearInterval(timer);
+      return;
+    }
 
     if (secondsLeft === 180 && !pingSent && raidRoles[dungeon]) {
       pingSent = true;
       await channel.send(`<@&${raidRoles[dungeon]}>`);
     }
 
-    await update();
+    await updateEmbed();
   }, 1000);
 }
 
@@ -176,21 +194,21 @@ async function mainLoop() {
   const ph = getPHTime();
   const m = ph.getMinutes();
   const s = ph.getSeconds();
-
-  const key = formatHM(ph);
+  const slot = `${m}-${s}`;
 
   const channel = await client.channels.fetch(raidChannelId).catch(() => null);
   if (!channel) return;
 
-  // ===== ACTIVE DUNGEON =====
-  if ((m === 0 || m === 30) && s <= 1) {
-    if (lastActiveKey === key) return;
-    lastActiveKey = key;
+  // ===== ACTIVE (:00 / :30) =====
+  if (s === 0 && (m === 0 || m === 30)) {
+    if (lastActiveSlot === slot) return;
+    lastActiveSlot = slot;
 
-    const active = dungeonSchedule[key];
+    const timeKey = formatHM(ph);
+    const active = dungeonSchedule[timeKey];
     if (!active) return;
 
-    const next = dungeonSchedule[getNextSlot(key)];
+    const next = dungeonSchedule[getNextSlot(timeKey)];
 
     await channel.send({
       embeds: [
@@ -214,20 +232,23 @@ async function mainLoop() {
     });
 
     reminderMessage = null;
+    pingSent = false;
   }
 
-  // ===== REMINDER =====
-  if ((m === 20 || m === 50) && s <= 1) {
-    if (lastReminderKey === key) return;
-    lastReminderKey = key;
+  // ===== REMINDER (:20 / :50) =====
+  if (s === 0 && (m === 20 || m === 50)) {
+    if (lastReminderSlot === slot) return;
+    lastReminderSlot = slot;
 
-    const base = getPHTime();
+    const base = new Date(ph);
     base.setMinutes(m === 20 ? 30 : 60, 0, 0);
 
-    const upcoming = dungeonSchedule[formatHM(base)];
+    const upcomingTime = formatHM(base);
+    const upcoming = dungeonSchedule[upcomingTime];
     if (!upcoming) return;
 
-    await postReminder(channel, upcoming, Math.floor((base - ph) / 1000));
+    const secondsLeft = (base - ph) / 1000;
+    await postReminder(channel, upcoming, secondsLeft);
   }
 }
 
